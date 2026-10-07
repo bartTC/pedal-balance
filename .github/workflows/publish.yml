@@ -1,0 +1,48 @@
+name: Publish
+
+# A tag is the release trigger: `git tag v0.2.0 && git push --tags`.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+
+      # A tag that disagrees with pyproject.toml would publish the wrong
+      # version under the right name, and PyPI never lets you reuse it.
+      - name: Tag must match the project version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(python -c "import tomllib,pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")"
+          echo "tag=$tag project=$version"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match project version $version"
+            exit 1
+          fi
+
+      - run: uv run ruff check src tests
+      - run: uv run pytest
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/pedal-balance
+    permissions:
+      # Required for PyPI Trusted Publishing. No API token is stored anywhere.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.0.1
+      - run: uv build
+      - uses: pypa/gh-action-pypi-publish@v1.14.2

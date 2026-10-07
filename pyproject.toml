@@ -1,0 +1,88 @@
+[project]
+name = "pedal-balance"
+version = "0.1.0"
+description = "Check and fix left/right balance errors of dual-sided power meter pedals in FIT files, with intervals.icu integration"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Martin Mahner", email = "martin@mahner.org" }]
+requires-python = ">=3.10"
+dependencies = [
+    "rich>=13",
+    # only cross-check the written file; the built-in self-check always runs
+    "fitdecode>=0.10",
+    "garmin-fit-sdk>=21.0",
+]
+keywords = ["cycling", "power meter", "fit", "garmin rally", "intervals.icu", "left right balance"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+
+[project.scripts]
+pedal-balance = "pedal_balance.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/bartTC/pedal-balance"
+Issues = "https://github.com/bartTC/pedal-balance/issues"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.16"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "README.md", "LICENSE"]
+
+[tool.ruff]
+target-version = "py310"  # keep in sync with requires-python
+lint.select = ["ALL"]
+lint.ignore = [
+    # Valid exclusions.
+    "COM812", # Conflicts with ruff format
+    "E501", # Line too long (>88)
+    "D203", # incorrect-blank-line-before-class (conflicts with D211)
+    "D212", # Don't require summary on first line
+    "ERA001", # Found commented-out code
+    "FBT", # Flake Boolean Trap (don't use arg=True in functions)
+    "ANN401", # Any is legitimate where a value is passed through untouched
+    "PLR0913", # correct/recompute take many inputs — not a smell here
+    "D", # docstrings are written where they help, not on every function
+    "CPY001", # the license is in LICENSE, no header in every file
+    "RUF001", "RUF002", "RUF003", # typographic characters (× – ≥ → …) in output and docs are intended
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15  # FIT parsing and the step search branch a lot
+
+[tool.ruff.lint.pylint]
+max-branches = 15
+max-statements = 60
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/test_*.py" = [
+    "S101", # Use of `assert` detected
+    "PLR2004", # Magic value in comparison — tests compare to literal counts/percentages
+    "D", # Tests don't need docstrings on every class/method
+    "ANN", # Fake objects and inline helpers don't need full type annotations
+    "SLF001", # Tests routinely reach into implementation internals
+    "ARG001", # fixtures accepted for their side effects
+    "ARG002", # Same for unused parameters on fake callables
+    "N802", # unittest's assert* naming (assertStep)
+]
+"tests/conftest.py" = [
+    "D", "ANN",
+]
+"tests/__init__.py" = ["D104"]
+"tests/anonymize.py" = [
+    "T201", # a command-line helper prints its result
+]

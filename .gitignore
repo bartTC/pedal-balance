@@ -1,0 +1,13 @@
+# credentials and personal data
+.env
+fits/
+private/
+
+# Python / build
+__pycache__/
+*.part
+.venv/
+dist/
+build/
+*.egg-info/
+.DS_Store
